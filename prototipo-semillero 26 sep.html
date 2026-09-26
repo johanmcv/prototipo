@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Registro de finca — Prototipo ICA</title>
+<style>
+:root{
+  --cream:#F3EFE4; --cream-2:#EAE4D4; --ink:#2B2B23; --ink-soft:#6B6A5E;
+  --green:#2F5B41; --green-dark:#234630; --green-soft:#DCE8DE;
+  --orange:#E08A3E; --orange-soft:#F6E2CB;
+  --line:#DCD5C2; --white:#FFFFFF;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:linear-gradient(180deg,#E9E4D6,#DCD6C4);
+  display:flex; align-items:center; justify-content:center; min-height:100%;
+  padding:24px; color:var(--ink);
+}
+.stage{width:100%; max-width:900px; display:flex; flex-direction:column; align-items:center; gap:14px;}
+.hint{font-size:13px; color:var(--ink-soft); text-align:center; max-width:360px; line-height:1.5;}
+.phone{
+  width:375px; max-width:92vw; height:812px; max-height:88vh;
+  background:var(--cream); border-radius:40px; border:10px solid #1c1c18;
+  box-shadow:0 30px 60px rgba(0,0,0,.35); overflow:hidden; position:relative;
+}
+.statusbar{display:flex; justify-content:space-between; align-items:center; padding:14px 22px 4px; font-size:13px; font-weight:600; color:var(--ink);}
+.dots{display:flex; gap:4px;}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--ink);display:inline-block;}
+.screen{position:absolute; inset:0; padding-top:44px; display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .25s ease;}
+.screen.active{opacity:1; pointer-events:auto;}
+.topbar{display:flex; align-items:center; gap:10px; padding:6px 20px 10px;}
+.back{width:32px;height:32px;border-radius:50%;background:var(--white);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;}
+.badge{margin-left:auto;font-size:11px;background:var(--green-soft);color:var(--green-dark);padding:4px 10px;border-radius:20px;font-weight:600;}
+.content{flex:1; padding:6px 20px 20px; overflow-y:auto;}
+h1{font-size:22px;margin:2px 0 2px;}
+.sub{font-size:13px;color:var(--ink-soft);margin:0 0 16px;}
+.zone-tag{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;}
+.grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;}
+.zcard{background:var(--white); border:1px solid var(--line); border-radius:16px; padding:14px 12px; cursor:pointer; transition:transform .15s ease, border-color .15s ease; position:relative;}
+.zcard:hover{transform:translateY(-2px); border-color:var(--green);}
+.zcard .ic{width:34px;height:34px;border-radius:10px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:10px;}
+.zcard .name{font-size:13.5px;font-weight:600;line-height:1.25;}
+.zcard .dot{position:absolute; top:12px; right:12px; width:8px;height:8px;border-radius:50%;background:var(--line);}
+.zcard.done .dot{background:var(--green);}
+.zcard.done{opacity:.65;}
+.center-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 26px;}
+.leaf{width:74px;height:74px;border-radius:50%;background:var(--white);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:18px;}
+.link-btn{color:var(--orange); font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; margin-bottom:18px; cursor:pointer;}
+.instr-box{background:var(--white); border:1px solid var(--line); border-radius:14px; padding:16px; font-size:13.5px; line-height:1.5; color:var(--ink-soft); text-align:left;}
+.btn{width:100%; padding:15px; border-radius:14px; border:none; font-size:15px; font-weight:700; cursor:pointer; margin-top:auto;}
+.btn.primary{background:var(--green); color:var(--white);}
+.btn.primary:hover{background:var(--green-dark);}
+.footer{padding:16px 20px 10px;}
+.tabs{display:flex; gap:8px; padding:0 20px 14px;}
+.tab{flex:1; text-align:center; padding:10px; border-radius:12px; font-size:13px; font-weight:700; background:var(--cream-2); color:var(--ink-soft); cursor:pointer;}
+.tab.active.photo{background:var(--green); color:var(--white);}
+.tab.active.voice{background:var(--orange); color:var(--white);}
+.stagebox{margin:0 20px; flex:1; border-radius:18px; background:#1E2B22; color:var(--white); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden;}
+.corner{position:absolute; width:22px;height:22px;border:2px solid rgba(255,255,255,.5);}
+.corner.tl{top:12px;left:12px;border-right:none;border-bottom:none;border-radius:6px 0 0 0;}
+.corner.br{bottom:12px;right:12px;border-left:none;border-top:none;border-radius:0 0 6px 0;}
+.zonepill{position:absolute; top:14px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.5); padding:5px 12px; border-radius:20px; font-size:11px; font-weight:600;}
+.capicon{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.12); display:flex;align-items:center;justify-content:center;font-size:26px;}
+.caphint{font-size:12px; color:rgba(255,255,255,.75); margin-top:14px;}
+.tapzone{position:absolute; bottom:20px; left:0; right:0; text-align:center;}
+.tapbtn{width:60px;height:60px;border-radius:50%;background:var(--white); border:4px solid rgba(255,255,255,.5); margin:0 auto 8px; cursor:pointer;}
+.holdbtn{width:60px;height:60px;border-radius:50%;background:var(--orange); border:4px solid rgba(255,255,255,.5); margin:0 auto 8px; cursor:pointer; display:flex;align-items:center;justify-content:center; font-size:22px; color:#fff;}
+.tapzone small{color:rgba(255,255,255,.65); font-size:11px;}
+.miclabel{font-size:14px;font-weight:700; margin-bottom:2px;}
+.preview{margin:0 20px 4px; border-radius:16px; overflow:hidden; height:230px; background:linear-gradient(160deg,#4A6E52,#2E4A34); position:relative;}
+.previewnote{margin:0 20px 4px; border-radius:16px; background:var(--orange-soft); padding:20px; display:flex; flex-direction:column; align-items:center; gap:10px;}
+.playbtn{width:46px;height:46px;border-radius:50%;background:var(--orange); color:#fff; display:flex;align-items:center;justify-content:center; font-size:18px;}
+.tagrow{display:flex; align-items:center; gap:8px; margin:14px 20px 4px;}
+.tagpill{font-size:10.5px; font-weight:700; background:var(--green-soft); color:var(--green-dark); padding:4px 10px; border-radius:20px;}
+.tagpill.wait{background:var(--cream-2); color:var(--ink-soft);}
+.qtext{padding:4px 20px 2px; font-size:14.5px; font-weight:600;}
+.qsub{padding:0 20px 12px; font-size:12px; color:var(--ink-soft);}
+.rowbtns{display:flex; gap:10px; padding:0 20px 18px; margin-top:auto;}
+.rowbtns .btn{margin-top:0;}
+.btn.ghost{background:var(--white); border:1px solid var(--line); color:var(--ink);}
+.donewrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.check{width:78px;height:78px;border-radius:50%;background:var(--green); color:#fff; display:flex;align-items:center;justify-content:center;font-size:34px;}
+.donetext{font-size:18px;font-weight:700;}
+.list{padding:0 20px;}
+.litem{display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); font-size:14px; font-weight:600;}
+.litem .ok{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;margin-left:auto;}
+.pill-top{text-align:center; background:var(--green-soft); color:var(--green-dark); font-size:12px; font-weight:700; padding:6px; border-radius:20px; margin:0 20px 4px;}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="hint"></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="dots"><span></span><span></span><span></span></span></div>
+
+    <!-- MENU -->
+    <div class="screen active" id="s-menu">
+      <div class="content">
+        <div class="zone-tag">8 zonas ICA</div>
+        <h1>Registro de finca</h1>
+        <p class="sub">Selecciona una zona para empezar</p>
+        <div class="grid" id="zoneGrid"></div>
+      </div>
+      <div class="footer" id="submitWrap" style="display:none;">
+        <button class="btn primary" onclick="go('s-final')">Ir al resumen final</button>
+      </div>
+    </div>
+
+    <!-- INSTRUCCION -->
+    <div class="screen" id="s-instr">
+      <div class="topbar"><div class="back" onclick="go('s-menu')">‹</div><span class="badge" id="instrBadge">1/8 ZONA</span></div>
+      <div class="center-col">
+        <div class="leaf">🌱</div>
+        <h1 id="instrTitle">Áreas de Cultivo</h1>
+        <div class="link-btn">🔊 Reproducir instrucción</div>
+        <div class="instr-box" id="instrText">Toma la foto del área. Verifica que esté delimitada, señalizada y sin ingreso de animales domésticos.</div>
+      </div>
+      <div class="footer"><button class="btn primary" onclick="go('s-capture'); setTab('photo')">Ir a tomar la foto</button></div>
+    </div>
+
+    <!-- CAPTURA -->
+    <div class="screen" id="s-capture">
+      <div class="topbar"><div class="back" onclick="go('s-instr')">‹</div><span class="badge" id="capBadge">1/8 ZONA</span></div>
+      <div class="content" style="padding-top:0;">
+        <h1 style="font-size:20px;">Captura</h1>
+        <p class="sub" id="capSub">Registro de finca — 8 zonas ICA</p>
+      </div>
+      <div class="tabs">
+        <div class="tab photo" id="tabPhoto" onclick="setTab('photo')">📷 Foto</div>
+        <div class="tab voice" id="tabVoice" onclick="setTab('voice')">🎙 Voz</div>
+      </div>
+      <div class="stagebox" id="capStage">
+        <div class="zonepill" id="capPill">ZONA 1 DE 8 · ÁREAS DE CULTIVO</div>
+        <div class="corner tl"></div><div class="corner br"></div>
+        <div id="capIconWrap"><div class="capicon">📷</div><div class="caphint">Centra el área de la zona en la mira</div></div>
+      </div>
+      <div class="tapzone" id="tapZone">
+        <div class="tapbtn" onclick="captureMedia()"></div>
+        <small id="tapLabel">Toca para capturar · La foto se guarda en este dispositivo</small>
+      </div>
+      <div style="height:88px;"></div>
+    </div>
+
+    <!-- CONFIRMACION -->
+    <div class="screen" id="s-confirm">
+      <div class="topbar"><div class="back" onclick="go('s-capture')">‹</div><span class="badge" id="confBadge" style="background:var(--orange-soft);color:#8a5522;">POR CONFIRMAR</span></div>
+      <div class="content" style="padding-top:0;">
+        <h1 style="font-size:20px;" id="confTitle">Confirmar foto</h1>
+        <p class="sub" id="confZone">Áreas de Cultivo</p>
+      </div>
+      <div id="confVisualPhoto" class="preview">
+        <div class="pill-top" style="position:absolute;top:12px;left:12px;right:auto;background:rgba(0,0,0,.45);color:#fff;">✓ FOTO TOMADA</div>
+      </div>
+      <div id="confVisualVoice" class="previewnote" style="display:none;">
+        <div class="pill-top" style="background:var(--orange-soft);color:#8a5522;">● NOTA GRABADA · 0:08</div>
+        <div class="playbtn">▶</div>
+        <div style="font-size:13px;font-weight:600;text-align:center;">"La zona está limpia y cercada"</div>
+        <div style="font-size:11px;color:var(--ink-soft);">Toca reproducir para revisar el audio</div>
+      </div>
+      <div class="qtext" id="confQ">¿La foto muestra bien la zona?</div>
+      <div class="qsub">Revisa antes de avanzar a la siguiente zona.</div>
+      <div class="rowbtns">
+        <button class="btn ghost" onclick="go('s-capture')">Repetir</button>
+        <button class="btn primary" onclick="confirmStep()">Sí, continuar</button>
+      </div>
+    </div>
+
+    <!-- ZONA COMPLETADA -->
+    <div class="screen" id="s-done">
+      <div class="donewrap">
+        <div class="check">✓</div>
+        <div class="donetext">Zona completada</div>
+      </div>
+    </div>
+
+    <!-- RESUMEN FINAL -->
+    <div class="screen" id="s-final">
+      <div class="topbar"><div class="back" onclick="go('s-menu')">‹</div></div>
+      <div class="content" style="padding-top:0;">
+        <div class="pill-top" id="finalCount" style="margin:0 0 10px;">8 DE 8 ZONAS VERIFICADAS</div>
+        <h1 style="font-size:20px;">Finca lista para la visita</h1>
+        <p class="sub">Revisa las zonas completadas antes de enviar.</p>
+        <div class="list" id="finalList"></div>
+      </div>
+      <div class="footer"><button class="btn primary" onclick="go('s-sent')">Enviar registro al ICA</button></div>
+    </div>
+
+    <!-- ENVIADO -->
+    <div class="screen" id="s-sent">
+      <div class="donewrap">
+        <div class="check">✓</div>
+        <div class="donetext">Enviado con éxito</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const zones = [
+  {id:1, name:"Áreas de Cultivo", icon:"🌱", text:"Toma la foto del área de cultivo. Verifica que esté delimitada, señalizada y sin ingreso de animales domésticos."},
+  {id:2, name:"Acopio Temporal", icon:"📦", text:"Fotografía el punto de acopio temporal. Verifica que esté cubierto y alejado de fuentes de agua."},
+  {id:3, name:"Residuos Vegetales", icon:"♻️", text:"Registra la zona de residuos vegetales. Confirma que estén separados de otros residuos."},
+  {id:4, name:"Almacén de Insumos", icon:"🧪", text:"Fotografía el almacén de insumos. Verifica ventilación, orden y etiquetado correcto."},
+  {id:5, name:"Dosificación y Preparación", icon:"⚗️", text:"Registra el área de dosificación. Verifica que existan elementos de medición limpios."},
+  {id:6, name:"Residuos de Mezclas", icon:"💧", text:"Fotografía la zona de residuos de mezclas. Confirma un manejo adecuado y sin fugas."},
+  {id:7, name:"Herramientas y Equipos", icon:"🧰", text:"Registra el área de herramientas. Verifica orden, limpieza y buen estado."},
+  {id:8, name:"Unidad Sanitaria", icon:"🚻", text:"Fotografía la unidad sanitaria. Verifica que cuente con agua, jabón y esté en buen estado."}
+];
+let status = {}; zones.forEach(z=>status[z.id]='pending');
+let current = null; let stage = 'photo';
+
+function renderGrid(){
+  const g = document.getElementById('zoneGrid'); g.innerHTML='';
+  zones.forEach(z=>{
+    const done = status[z.id]==='done';
+    const el = document.createElement('div');
+    el.className = 'zcard'+(done?' done':'');
+    el.onclick = ()=> openZone(z.id);
+    el.innerHTML = `<div class="dot"></div><div class="ic">${z.icon}</div><div class="name">${z.name}</div>`;
+    g.appendChild(el);
+  });
+  const allDone = zones.every(z=>status[z.id]==='done');
+  document.getElementById('submitWrap').style.display = allDone ? 'block':'none';
+}
+function renderFinal(){
+  const l = document.getElementById('finalList'); l.innerHTML='';
+  zones.forEach(z=>{
+    l.innerHTML += `<div class="litem"><span>${z.icon}</span><span>${z.name}</span><span class="ok">✓</span></div>`;
+  });
+}
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='s-menu') renderGrid();
+  if(id==='s-final') renderFinal();
+}
+function openZone(id){
+  current = zones.find(z=>z.id===id);
+  document.getElementById('instrBadge').textContent = `${id}/8 ZONA`;
+  document.getElementById('instrTitle').textContent = current.name;
+  document.getElementById('instrText').textContent = current.text;
+  go('s-instr');
+}
+function setTab(which){
+  stage = which;
+  document.getElementById('tabPhoto').classList.toggle('active', which==='photo');
+  document.getElementById('tabVoice').classList.toggle('active', which==='voice');
+  document.getElementById('capBadge').textContent = `${current.id}/8 ZONA`;
+  document.getElementById('capPill').textContent = `ZONA ${current.id} DE 8 · ${current.name.toUpperCase()}`;
+  const wrap = document.getElementById('capIconWrap');
+  const tap = document.getElementById('tapZone');
+  if(which==='photo'){
+    wrap.innerHTML = `<div class="capicon">📷</div><div class="caphint">Centra el área de la zona en la mira</div>`;
+    tap.innerHTML = `<div class="tapbtn" onclick="captureMedia()"></div><small>Toca para capturar · La foto se guarda en este dispositivo</small>`;
+  } else {
+    wrap.innerHTML = `<div class="miclabel">🎙 Grabando…</div><div class="caphint">Mantén presionado y cuenta cómo está la zona</div>`;
+    tap.innerHTML = `<div class="holdbtn" onclick="captureMedia()">●</div><small>Mantén presionado para grabar · Suelta cuando termines</small>`;
+  }
+}
+function captureMedia(){
+  document.getElementById('confBadge').textContent = 'POR CONFIRMAR';
+  document.getElementById('confZone').textContent = current.name;
+  const isPhoto = stage==='photo';
+  document.getElementById('confTitle').textContent = isPhoto ? 'Confirmar foto' : 'Confirmar nota';
+  document.getElementById('confVisualPhoto').style.display = isPhoto ? 'block':'none';
+  document.getElementById('confVisualVoice').style.display = isPhoto ? 'none':'flex';
+  document.getElementById('confQ').textContent = isPhoto ? '¿La foto muestra bien la zona?' : '¿Se escucha bien tu descripción?';
+  go('s-confirm');
+}
+function confirmStep(){
+  if(stage==='photo'){
+    setTab('voice');
+    go('s-capture');
+  } else {
+    status[current.id] = 'done';
+    go('s-done');
+    setTimeout(()=> go('s-menu'), 1200);
+  }
+}
+renderGrid();
+</script>
+</body>
+</html>
